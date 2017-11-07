@@ -5,14 +5,13 @@ from scipy.misc import imread
 from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
 from keras.models import Sequential
-from keras.layers import Flatten, Dense, Lambda, Cropping2D, Conv2D
-
+from keras.layers import Flatten, Dense, Lambda, Cropping2D, Conv2D, Dropout
 
 # Note that I use Keras2 for this project
 DATADIR = 'data/'
 IMGDIR = os.path.join(DATADIR, 'IMG/')
 CSVPATH = os.path.join(DATADIR, 'driving_log.csv')
-CORRECTION_ANGLE = 0.065  # decided after small exeriments
+CORRECTION_ANGLE = 0.05  # decided after small exeriments
 
 
 # Read the driving_log.csv file
@@ -93,25 +92,26 @@ if __name__ == '__main__':
     # Normalize to [-1, 1]
     model.add(Lambda(lambda x: x/255. - 0.5))
     # Convolution Layers
-    model.add(Conv2D(24, 5, strides=(2, 2), activation='relu'))
-    model.add(Conv2D(36, 5, strides=(2, 2), activation='relu'))
-    model.add(Conv2D(48, 5, strides=(2, 2), activation='relu'))
-    model.add(Conv2D(64, 3, strides=(1, 1), activation='relu'))
-    model.add(Conv2D(64, 3, strides=(1, 1), activation='relu'))
+    model.add(Conv2D(12, 5, strides=(2, 2), activation='relu', kernel_initializer='glorot_normal'))
+    model.add(Conv2D(24, 5, strides=(2, 2), activation='relu', kernel_initializer='glorot_normal'))
+    model.add(Conv2D(36, 5, strides=(2, 2), activation='relu', kernel_initializer='glorot_normal'))
+    model.add(Conv2D(48, 5, strides=(1, 1), activation='relu', kernel_initializer='glorot_normal'))
+    model.add(Conv2D(64, 3, strides=(1, 1), activation='relu', kernel_initializer='glorot_normal'))
     model.add(Flatten())
     # Fully connected layers
-    model.add(Dense(100))
-    #model.add(Dropout(0.5))
-    model.add(Dense(50))
-    model.add(Dense(10))
+    model.add(Dense(100, kernel_initializer='glorot_normal'))
+    model.add(Dropout(0.7))
+    model.add(Dense(50, kernel_initializer='glorot_normal'))
+    model.add(Dropout(0.3))
+    model.add(Dense(10, kernel_initializer='glorot_normal'))
     model.add(Dense(1))
     # Optimizer
     model.compile(loss='mse', optimizer='adam')
 
     # Use fit_generator (for Keras>2.0) with batch generators
-    model.fit_generator(train_generator, train_steps, epochs=5, \
+    model.fit_generator(train_generator, train_steps, epochs=10, \
                         validation_data=validation_generator, \
                         validation_steps=validation_steps, \
-                        max_queue_size=10, workers=1, initial_epoch=0)
+                        workers=1, initial_epoch=0)
     # save the model
     model.save('model.h5')
